@@ -6,18 +6,36 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "bun scripts/seed.ts",
+    "db:studio": "drizzle-kit studio",
+    "test": "bun test",
+    "db:reset-password": "bun scripts/reset-password.ts",
+    "db:cleanup": "bun scripts/cleanup.ts",
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate-data": "bun scripts/migrate-data.ts",
+    "db:check": "bun scripts/check-database.ts",
+    "test:db": "bun test --timeout 30000 ./tests/database.integration.ts"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "marked": "^18.1.2",
     "next": "16.4.3",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/bun": "^1.4.4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.9",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
@@ -31,5 +49,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  }
 }

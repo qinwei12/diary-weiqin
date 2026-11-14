@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# diary data (created on first run)
+/data/posts.json
+/data/posts.backup.json
+/data/.posts.*.tmp
+
+# uploaded photos
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# local env (checked-in example below)
+!.env.example
+
+
+# Private database migration snapshots (may contain password/session hashes)
+/data/database-backups/

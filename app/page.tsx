@@ -1,69 +1,129 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Suspense } from "react";
+import { Feed } from "@/components/feed";
+import { FeedSidebar } from "@/components/feed-sidebar";
+import { Hero } from "@/components/hero";
+import { ArrowRightIcon, LeafIcon, PenIcon } from "@/components/icons";
+import {
+  filterPosts,
+  statsFor,
+  summarizePost,
+  tagCounts,
+} from "@/lib/aggregate";
+import { normalizeFeedLimit } from "@/lib/feed";
+import { getAllPosts } from "@/lib/posts";
 
-export default function Home() {
+type HomeSearchParams = PageProps<"/">["searchParams"];
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: HomeSearchParams;
+}) {
+  const posts = await getAllPosts();
+  const stats = statsFor(posts);
+  const tags = tagCounts(posts);
+  const recent = posts.slice(0, 3).map(summarizePost);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="home">
+      <Hero stats={stats} />
+
+      <section className="container feed-section" id="feed">
+        <div className="feed-heading">
+          <div className="feed-heading__title">
+            <span className="mini-label">
+              <LeafIcon size={14} />
+              THE DAILY · 日常动态
+            </span>
+            <h2>最近的日常</h2>
+          </div>
+          <p className="feed-heading__note">
+            从最近的黄昏开始读起。搜索一个词、按标签筛选，或者让照片替页面换一种颜色。
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+
+        <div className="feed-layout">
+          <Suspense fallback={<FeedSkeleton />}>
+            <HomeFeed
+              searchParams={searchParams}
+              tags={tags}
+              allCount={posts.length}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </Suspense>
+          <FeedSidebar posts={recent} tags={tags} />
         </div>
-      </main>
+      </section>
+
+      <section className="container home-cta">
+        <div className="home-cta__flower" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="home-cta__copy">
+          <span className="mini-label">A NOTE TO TOMORROW</span>
+          <h2>今天，也值得被记下来。</h2>
+          <p>不必写得很好。一句话、一张照片，或者只是一个当下的心情，都算数。</p>
+        </div>
+        <Link href="/compose" className="button button--primary">
+          <PenIcon size={16} />
+          写下此刻
+          <ArrowRightIcon size={16} />
+        </Link>
+      </section>
+    </div>
+  );
+}
+
+function firstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
+async function HomeFeed({
+  searchParams,
+  tags,
+  allCount,
+}: {
+  searchParams: HomeSearchParams;
+  tags: { tag: string; count: number }[];
+  allCount: number;
+}) {
+  const params = await searchParams;
+  const query = firstParam(params.q).trim().slice(0, 80);
+  const tag = firstParam(params.tag).trim().slice(0, 16);
+  const limit = normalizeFeedLimit(firstParam(params.limit));
+
+  const posts = await getAllPosts();
+  const matched = filterPosts(posts, query, tag);
+  const visible = matched.slice(0, limit).map(summarizePost);
+
+  return (
+    <Feed
+      posts={visible}
+      tags={tags}
+      total={matched.length}
+      allCount={allCount}
+      query={query}
+      activeTag={tag || null}
+      limit={limit}
+    />
+  );
+}
+
+function FeedSkeleton() {
+  return (
+    <div className="feed-main" aria-hidden="true">
+      <div className="feed-skeleton">
+        <span className="skeleton-bar skeleton-bar--md" />
+        <span className="skeleton-bar" />
+        <div className="feed-skeleton__cards">
+          <span className="feed-skeleton__card" />
+          <span className="feed-skeleton__card" />
+        </div>
+      </div>
     </div>
   );
 }
