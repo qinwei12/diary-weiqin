@@ -120,6 +120,7 @@ function PostDetail({
             fill
             priority
             sizes="100vw"
+            unoptimized={cover.url.startsWith("/api/media?")}
             className="post-ambient__image"
           />
         </div>

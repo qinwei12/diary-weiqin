@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   images: {
+    // The diary image proxy validates `key` before redirecting to private storage.
+    localPatterns: [{ pathname: "/api/media" }],
     remotePatterns,
   },
   devIndicators: false,

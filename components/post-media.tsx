@@ -56,6 +56,7 @@ export function PostMedia({
               height={images[0].height}
               sizes="(max-width: 900px) 100vw, 920px"
               loading="eager"
+              unoptimized={images[0].url.startsWith("/api/media?")}
               fetchPriority="high"
               className="media-single-image"
             />
@@ -84,6 +85,7 @@ export function PostMedia({
                   sizes={sizes}
                   loading={variant === "detail" && index === 0 ? "eager" : "lazy"}
                   fetchPriority={variant === "detail" && index === 0 ? "high" : "auto"}
+                  unoptimized={image.url.startsWith("/api/media?")}
                   className="media-image"
                   style={{ objectPosition: tall ? "50% 20%" : "50% 50%" }}
                 />
@@ -173,6 +175,7 @@ function Lightbox({
           width={image.width}
           height={image.height}
           sizes="92vw"
+          unoptimized={image.url.startsWith("/api/media?")}
           className="lightbox__image"
         />
       </div>

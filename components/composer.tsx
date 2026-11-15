@@ -725,6 +725,7 @@ export function Composer({
                               width={image.width}
                               height={image.height}
                               sizes="80px"
+                              unoptimized={image.url.startsWith("/api/media?")}
                             />
                           </button>
                         ))}
@@ -859,6 +860,7 @@ export function Composer({
                         alt={image.alt || `配图 ${index + 1}`}
                         fill
                         sizes="(max-width: 720px) 40vw, 190px"
+                        unoptimized={image.url.startsWith("/api/media?")}
                       />
                     </div>
                     {index === 0 ? (
@@ -922,6 +924,7 @@ export function Composer({
                       width={image.width}
                       height={image.height}
                       sizes="42px"
+                      unoptimized={image.url.startsWith("/api/media?")}
                     />
                     <span>
                       配图 {index + 1}
@@ -1078,6 +1081,7 @@ export function Composer({
                     width={cover.width}
                     height={cover.height}
                     sizes="240px"
+                    unoptimized={cover.url.startsWith("/api/media?")}
                   />
                   <span
                     className="composer-theme__accent"
