@@ -160,7 +160,6 @@ Drizzle Kit 配置在 [`drizzle.config.ts`](drizzle.config.ts)，SQL 迁移和�
 5. 当前上传由应用服务器转发。Vercel Functions 的请求体有约 4.5 MB 上限；若要稳定支持接近 20 MB 的原图，需要改用受登录校验保护的浏览器直传或分片上传流程。
 6. 上线前修改初始密码，并把 `NEXT_PUBLIC_SITE_URL` 设为真实的 `https://` 地址；登录 Cookie 会据此启用 Secure。
 7. 登录限流是单进程内存实现；多实例或公开站点建议在反向代理 / 网关再加一层限流。
-8. 关于页的版式元素与灵感参考了哔哩哔哩创作者 **@ZipZipPipe**，链接在页面底部。
 
 ## 常用命令
 
