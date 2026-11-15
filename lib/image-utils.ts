@@ -7,10 +7,10 @@ export const MAX_IMAGE_PIXELS = 40_000_000;
 export type ImageFormat = "jpeg" | "png" | "webp" | "avif";
 
 export function isManagedImageUrl(url: string): boolean {
-  return /^\/(?:uploads|images)\/[a-zA-Z0-9._-]+$/.test(url) || isB2ProxyImageUrl(url);
+  return /^\/(?:uploads|images)\/[a-zA-Z0-9._-]+$/.test(url) || isStorageProxyImageUrl(url);
 }
 
-function isB2ProxyImageUrl(value: string): boolean {
+function isStorageProxyImageUrl(value: string): boolean {
   try {
     const url = new URL(value, "https://local.invalid");
     const key = url.searchParams.get("key");

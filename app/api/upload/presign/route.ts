@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { createB2UploadUrl, diaryKeyForUpload } from "@/lib/b2";
+import { createStorageUploadUrl, diaryKeyForUpload } from "@/lib/object-storage";
 import { MAX_UPLOAD_BYTES, type ImageFormat } from "@/lib/image-utils";
 
 const FORMATS: Record<string, ImageFormat> = {
@@ -23,9 +23,9 @@ export async function POST(request: Request) {
       return Response.json({ error: "单张图片不能超过 20MB" }, { status: 413 });
     }
     const key = diaryKeyForUpload(format);
-    return Response.json({ key, uploadUrl: await createB2UploadUrl(key, contentType), maxBytes: MAX_UPLOAD_BYTES });
+    return Response.json({ key, uploadUrl: await createStorageUploadUrl(key, contentType), maxBytes: MAX_UPLOAD_BYTES });
   } catch (error) {
-    console.error("B2 diary presign failed:", error);
-    return Response.json({ error: "暂时无法准备图片上传，请检查 B2 配置" }, { status: 503 });
+    console.error("Object storage diary presign failed:", error);
+    return Response.json({ error: "暂时无法准备图片上传，请检查对象存储配置" }, { status: 503 });
   }
 }

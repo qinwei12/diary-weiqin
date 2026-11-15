@@ -7,7 +7,7 @@ import { posts, postImages, sessions, users } from "../lib/schema";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { createSeedPosts } from "../lib/seed";
 import type { SavePostInput } from "../lib/types";
-import { b2KeyFromProxyUrl, deleteFromB2, isB2ProxyImageUrl } from "../lib/b2";
+import { deleteFromStorage, isStorageProxyImageUrl, storageKeyFromProxyUrl } from "../lib/object-storage";
 
 const cookieJar = new Map<string, string>();
 mock.module("next/headers", () => ({
@@ -95,7 +95,7 @@ test("a failed multi-table transaction rolls back the post update", async () => 
   expect((await getPost(id))?.title).toBe(before?.title);
 });
 
-test("authenticated upload stores an image in B2 and returns an internal proxy URL", async () => {
+test("authenticated upload stores an image in object storage and returns an internal proxy URL", async () => {
   const file = new File([await Bun.file("public/images/sticker.webp").arrayBuffer()], "test.webp", { type: "image/webp" });
   const form = new FormData();
   form.append("files", file);
@@ -108,7 +108,7 @@ test("authenticated upload stores an image in B2 and returns an internal proxy U
     const result = await response.json() as { images: Array<{ url: string; width: number; height: number; accent: string; palette: string[] }> };
     expect(result.images).toHaveLength(1);
     imageUrl = result.images[0].url;
-    expect(isB2ProxyImageUrl(imageUrl)).toBe(true);
+    expect(isStorageProxyImageUrl(imageUrl)).toBe(true);
     const saved = await savePost({ ...input, images: [{ ...input.images[0], ...result.images[0] }] });
     if (!saved.ok) throw new Error(saved.error);
     savedId = saved.id;
@@ -118,8 +118,8 @@ test("authenticated upload stores an image in B2 and returns an internal proxy U
     testPosts.delete(savedId);
     expect(await getPost(savedId)).toBeNull();
   } finally {
-    const key = imageUrl ? b2KeyFromProxyUrl(imageUrl) : null;
-    if (key && !savedId) await deleteFromB2(key);
+    const key = imageUrl ? storageKeyFromProxyUrl(imageUrl) : null;
+    if (key && !savedId) await deleteFromStorage(key);
   }
 });
 

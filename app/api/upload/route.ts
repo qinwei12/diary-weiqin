@@ -7,7 +7,7 @@ import {
   normalizePalette,
   sniffImageFormat,
 } from "@/lib/image-utils";
-import { deleteFromB2, uploadToB2 } from "@/lib/b2";
+import { deleteFromStorage, uploadToStorage } from "@/lib/object-storage";
 
 export const maxDuration = 60;
 
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       }
       const theme = themeFromPalette(palette);
 
-      const uploaded = await uploadToB2(buffer, format);
+      const uploaded = await uploadToStorage(buffer, format);
       written.push(uploaded.key);
 
       images.push({
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     await Promise.all(
-      written.map((key) => deleteFromB2(key).catch((error) => {
+      written.map((key) => deleteFromStorage(key).catch((error) => {
         console.error("Upload rollback failed:", error instanceof Error ? error.message : "Unknown error");
       })),
     );

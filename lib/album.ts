@@ -1,6 +1,6 @@
 import { desc } from "drizzle-orm";
 import { db } from "./db";
-import { createB2DownloadUrl } from "./b2";
+import { createStorageDownloadUrl } from "./object-storage";
 import { albumImages } from "./schema";
 
 export type AlbumImage = typeof albumImages.$inferSelect & { url: string };
@@ -10,7 +10,7 @@ export async function getAlbumImages(): Promise<AlbumImage[]> {
   return Promise.all(
     rows.map(async (row) => ({
       ...row,
-      url: await createB2DownloadUrl(row.objectKey, 15 * 60),
+      url: await createStorageDownloadUrl(row.objectKey, 15 * 60),
     })),
   );
 }

@@ -16,7 +16,7 @@ import {
   UPLOAD_DIRECTORY,
 } from "./image-utils";
 import { DEFAULT_THEME } from "./site";
-import { b2KeyFromProxyUrl, deleteFromB2, isB2ProxyImageUrl } from "./b2";
+import { deleteFromStorage, isStorageProxyImageUrl, storageKeyFromProxyUrl } from "./object-storage";
 import type { PostImage, SavePostInput, SavePostResult } from "./types";
 
 class UserError extends Error {}
@@ -92,7 +92,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
         } catch {
           userError("有一张图片已经不在服务器上了，请重新上传");
         }
-      } else if (!isB2ProxyImageUrl(item.url)) {
+      } else if (!isStorageProxyImageUrl(item.url)) {
         userError("图片地址无效，请重新上传");
       }
 
@@ -199,18 +199,18 @@ export async function deletePost(
         }
       }
     }
-    const b2Urls = removed.images.map((image) => image.url).filter(isB2ProxyImageUrl);
-    if (b2Urls.length) {
+    const storageUrls = removed.images.map((image) => image.url).filter(isStorageProxyImageUrl);
+    if (storageUrls.length) {
       const stillUsed = await db.select({ url: postImages.url }).from(postImages)
-        .where(inArray(postImages.url, b2Urls));
+        .where(inArray(postImages.url, storageUrls));
       const used = new Set(stillUsed.map((image) => image.url));
-      await Promise.all(b2Urls.filter((url) => !used.has(url)).map(async (url) => {
-        const key = b2KeyFromProxyUrl(url);
+      await Promise.all(storageUrls.filter((url) => !used.has(url)).map(async (url) => {
+        const key = storageKeyFromProxyUrl(url);
         if (!key) return;
         try {
-          await deleteFromB2(key);
+          await deleteFromStorage(key);
         } catch (error) {
-          console.error("B2 image cleanup failed:", error instanceof Error ? error.message : "Unknown error");
+          console.error("Object storage image cleanup failed:", error instanceof Error ? error.message : "Unknown error");
         }
       }));
     }

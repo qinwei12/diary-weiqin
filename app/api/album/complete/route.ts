@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { createB2DownloadUrl, deleteFromB2, isB2ObjectKey } from "@/lib/b2";
+import { createStorageDownloadUrl, deleteFromStorage, isStorageObjectKey } from "@/lib/object-storage";
 import { MAX_IMAGE_PIXELS, MAX_UPLOAD_BYTES, normalizeDimensions, normalizePalette } from "@/lib/image-utils";
 import { themeFromPalette } from "@/lib/colors";
 import { db } from "@/lib/db";
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const dimensions = normalizeDimensions(body.width, body.height);
   const bytes = typeof body.bytes === "number" ? body.bytes : 0;
   const palette = normalizePalette(body.palette);
-  if (!key.startsWith("album/") || !isB2ObjectKey(key) || !dimensions || dimensions.width * dimensions.height > MAX_IMAGE_PIXELS || !Number.isSafeInteger(bytes) || bytes < 1 || bytes > MAX_UPLOAD_BYTES || !palette) {
+  if (!key.startsWith("album/") || !isStorageObjectKey(key) || !dimensions || dimensions.width * dimensions.height > MAX_IMAGE_PIXELS || !Number.isSafeInteger(bytes) || bytes < 1 || bytes > MAX_UPLOAD_BYTES || !palette) {
     return Response.json({ error: "图片信息不合法" }, { status: 400 });
   }
 
@@ -38,10 +38,10 @@ export async function POST(request: Request) {
       palette,
     }).returning();
     return Response.json({
-      image: { ...image, url: await createB2DownloadUrl(key, 15 * 60) },
+      image: { ...image, url: await createStorageDownloadUrl(key, 15 * 60) },
     });
   } catch (error) {
-    await deleteFromB2(key).catch((cleanupError) => {
+    await deleteFromStorage(key).catch((cleanupError) => {
       console.error("Album upload cleanup failed:", cleanupError);
     });
     console.error("Album image save failed:", error);

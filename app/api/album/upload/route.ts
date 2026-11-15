@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { themeFromPalette } from "@/lib/colors";
-import { albumKeyForUpload, createB2DownloadUrl, deleteFromB2, uploadToB2 } from "@/lib/b2";
+import { albumKeyForUpload, createStorageDownloadUrl, deleteFromStorage, uploadToStorage } from "@/lib/object-storage";
 import { db } from "@/lib/db";
 import {
   MAX_IMAGE_PIXELS,
@@ -64,8 +64,8 @@ export async function POST(request: Request) {
 
   const key = albumKeyForUpload(format);
   try {
-    await uploadToB2(buffer, format, key);
-    const url = await createB2DownloadUrl(key, 15 * 60);
+    await uploadToStorage(buffer, format, key);
+    const url = await createStorageDownloadUrl(key, 15 * 60);
     const [image] = await db.insert(albumImages).values({
       objectKey: key,
       width: dimensions.width,
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     if (!image) throw new Error("Album image insert returned no row");
     return Response.json({ image: { ...image, url } });
   } catch (error) {
-    await deleteFromB2(key).catch((cleanupError) => {
+    await deleteFromStorage(key).catch((cleanupError) => {
       console.error("Album upload cleanup failed:", cleanupError);
     });
     console.error("Album upload failed:", error);

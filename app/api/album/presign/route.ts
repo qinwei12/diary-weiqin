@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { albumKeyForUpload, createB2UploadUrl } from "@/lib/b2";
+import { albumKeyForUpload, createStorageUploadUrl } from "@/lib/object-storage";
 import { MAX_UPLOAD_BYTES, type ImageFormat } from "@/lib/image-utils";
 
 const IMAGE_TYPES: Record<string, ImageFormat> = {
@@ -24,10 +24,10 @@ export async function POST(request: Request) {
     }
 
     const key = albumKeyForUpload(format);
-    const uploadUrl = await createB2UploadUrl(key, contentType);
+    const uploadUrl = await createStorageUploadUrl(key, contentType);
     return Response.json({ key, uploadUrl, maxBytes: MAX_UPLOAD_BYTES });
   } catch (error) {
-    console.error("B2 album presign failed:", error);
-    return Response.json({ error: "暂时无法准备上传，请检查 B2 配置" }, { status: 503 });
+    console.error("Object storage album presign failed:", error);
+    return Response.json({ error: "暂时无法准备上传，请检查对象存储配置" }, { status: 503 });
   }
 }

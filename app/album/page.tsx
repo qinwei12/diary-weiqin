@@ -41,7 +41,7 @@ async function AlbumLoader() {
           <div className="album-head__eyebrow"><ImageIcon size={14} /> PRIVATE PHOTO WALL · 私密相册墙</div>
           <h1>把喜欢的光，<em>留在这里。</em></h1>
           <p>这里不对外公开，只给登录后的你看。生活照、风景照，和那些值得以后再看一遍的瞬间。</p>
-          <div className="album-head__note"><SparkIcon size={14} /> B2 私有存储 · 登录后临时授权 · 单张不超过 20MB</div>
+          <div className="album-head__note"><SparkIcon size={14} /> 私有对象存储 · 登录后临时授权 · 单张不超过 20MB</div>
         </header>
         <AlbumWall initialImages={initialImages} />
       </div>

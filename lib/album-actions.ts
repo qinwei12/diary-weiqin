@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getSession } from "./auth";
-import { deleteFromB2 } from "./b2";
+import { deleteFromStorage } from "./object-storage";
 import { db } from "./db";
 import { albumImages } from "./schema";
 
@@ -16,7 +16,7 @@ export async function deleteAlbumImage(id: string): Promise<{ ok: true } | { ok:
   if (!image) return { ok: false, error: "照片不存在或已经删除" };
 
   try {
-    await deleteFromB2(image.objectKey);
+    await deleteFromStorage(image.objectKey);
     await db.delete(albumImages).where(eq(albumImages.id, id));
     revalidatePath("/album");
     return { ok: true };

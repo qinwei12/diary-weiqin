@@ -14,6 +14,7 @@
     "test": "bun test",
     "db:reset-password": "bun scripts/reset-password.ts",
     "db:cleanup": "bun scripts/cleanup.ts",
+    "storage:migrate": "bun run scripts/migrate-object-storage.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate-data": "bun scripts/migrate-data.ts",
     "db:check": "bun scripts/check-database.ts",

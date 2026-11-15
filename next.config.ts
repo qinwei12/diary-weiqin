@@ -2,13 +2,13 @@ import type { NextConfig } from "next";
 
 const remotePatterns = [] as NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>;
 
-if (process.env.B2_ENDPOINT && process.env.B2_BUCKET) {
-  const endpoint = new URL(process.env.B2_ENDPOINT);
+if (process.env.OBJECT_STORAGE_ENDPOINT && process.env.OBJECT_STORAGE_BUCKET) {
+  const endpoint = new URL(process.env.OBJECT_STORAGE_ENDPOINT);
   remotePatterns.push({
     protocol: "https",
     hostname: endpoint.hostname,
     port: endpoint.port,
-    pathname: `/${process.env.B2_BUCKET}/**`,
+    pathname: `/${process.env.OBJECT_STORAGE_BUCKET}/**`,
   });
 }
 

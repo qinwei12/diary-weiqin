@@ -60,7 +60,7 @@ export function AlbumWall({ initialImages }: { initialImages: AlbumWallImage[] }
       {uploading ? (
         <div className="album-progress" role="status">
           <span style={{ width: `${progress}%` }} />
-          <small>照片会先在浏览器里缩放，再直传到私有 B2 桶；单张不超过 20MB。</small>
+          <small>照片会先在浏览器里缩放，再保存到私有对象存储；单张不超过 20MB。</small>
         </div>
       ) : null}
 
