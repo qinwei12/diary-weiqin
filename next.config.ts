@@ -18,7 +18,11 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   images: {
     // The diary image proxy validates `key` before redirecting to private storage.
-    localPatterns: [{ pathname: "/api/media" }],
+    localPatterns: [
+      { pathname: "/api/media" },
+      { pathname: "/images/**", search: "" },
+      { pathname: "/uploads/**", search: "" },
+    ],
     remotePatterns,
   },
   devIndicators: false,
