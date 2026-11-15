@@ -1,5 +1,5 @@
 {
-  "name": "diary-weiqin",
+  "name": "quiet-wisp",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,6 +20,8 @@
     "test:db": "bun test --timeout 30000 ./tests/database.integration.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1169.0",
+    "@aws-sdk/s3-request-presigner": "^3.1169.0",
     "drizzle-orm": "^0.45.4",
     "marked": "^18.1.2",
     "next": "16.4.3",

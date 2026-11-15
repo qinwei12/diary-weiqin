@@ -11,6 +11,7 @@ import { ArrowUpRightIcon, PaletteIcon, PinIcon } from "./icons";
 import { LikeButton } from "./like-button";
 import { PostMedia } from "./post-media";
 import { useDiaryTheme } from "./theme-provider";
+import { useHydrated } from "./use-hydrated";
 
 export function PostCard({
   post,
@@ -22,6 +23,7 @@ export function PostCard({
   following?: boolean;
 }) {
   const { theme, applyTheme, setFollow } = useDiaryTheme();
+  const hydrated = useHydrated();
   const title = post.title || "无题的这一天";
   const style = {
     "--card-accent": post.theme.accent,
@@ -146,7 +148,7 @@ export function PostCard({
                   key={`${post.id}-${color}-${index}`}
                   style={{ backgroundColor: color }}
                   className={
-                    theme.accent.toLowerCase() === color.toLowerCase()
+                    hydrated && theme.accent.toLowerCase() === color.toLowerCase()
                       ? "is-current"
                       : undefined
                   }

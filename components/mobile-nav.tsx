@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarIcon, LeafIcon, PenIcon, SparkIcon, UserIcon } from "./icons";
+import { CalendarIcon, ImageIcon, LeafIcon, PenIcon, SparkIcon, UserIcon } from "./icons";
 
 const items = [
   { href: "/", label: "动态", icon: LeafIcon, exact: true },
   { href: "/archive", label: "归档", icon: CalendarIcon },
+  { href: "/album", label: "相册", icon: ImageIcon },
   { href: "/compose", label: "写下", icon: PenIcon, primary: true },
   {
     href: "/account",

@@ -29,6 +29,22 @@ export const postImages = pgTable("PostImage", {
   position: integer("position").notNull().default(0),
 }, (table) => [index("PostImage_postId_position_idx").on(table.postId, table.position)]);
 
+export const albumImages = pgTable("AlbumImage", {
+  id: text("id").primaryKey().$defaultFn(randomUUID),
+  objectKey: text("objectKey").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  bytes: integer("bytes").notNull(),
+  alt: text("alt").notNull().default(""),
+  caption: text("caption").notNull().default(""),
+  accent: text("accent").notNull(),
+  palette: text("palette").array().notNull(),
+  createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("AlbumImage_objectKey_key").on(table.objectKey),
+  index("AlbumImage_createdAt_idx").on(table.createdAt.desc()),
+]);
+
 export const users = pgTable("User", {
   id: text("id").primaryKey().$defaultFn(randomUUID),
   username: text("username").notNull(),

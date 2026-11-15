@@ -16,7 +16,7 @@ import {
   UPLOAD_DIRECTORY,
 } from "./image-utils";
 import { DEFAULT_THEME } from "./site";
-import { deleteFromUpyun, isUpyunImageUrl } from "./upyun";
+import { b2KeyFromProxyUrl, deleteFromB2, isB2ProxyImageUrl } from "./b2";
 import type { PostImage, SavePostInput, SavePostResult } from "./types";
 
 class UserError extends Error {}
@@ -92,7 +92,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
         } catch {
           userError("有一张图片已经不在服务器上了，请重新上传");
         }
-      } else if (!isUpyunImageUrl(item.url)) {
+      } else if (!isB2ProxyImageUrl(item.url)) {
         userError("图片地址无效，请重新上传");
       }
 
@@ -199,16 +199,18 @@ export async function deletePost(
         }
       }
     }
-    const remoteUrls = removed.images.map((image) => image.url).filter(isUpyunImageUrl);
-    if (remoteUrls.length) {
+    const b2Urls = removed.images.map((image) => image.url).filter(isB2ProxyImageUrl);
+    if (b2Urls.length) {
       const stillUsed = await db.select({ url: postImages.url }).from(postImages)
-        .where(inArray(postImages.url, remoteUrls));
+        .where(inArray(postImages.url, b2Urls));
       const used = new Set(stillUsed.map((image) => image.url));
-      await Promise.all(remoteUrls.filter((url) => !used.has(url)).map(async (url) => {
+      await Promise.all(b2Urls.filter((url) => !used.has(url)).map(async (url) => {
+        const key = b2KeyFromProxyUrl(url);
+        if (!key) return;
         try {
-          await deleteFromUpyun(url);
+          await deleteFromB2(key);
         } catch (error) {
-          console.error("Upyun image cleanup failed:", error instanceof Error ? error.message : "Unknown error");
+          console.error("B2 image cleanup failed:", error instanceof Error ? error.message : "Unknown error");
         }
       }));
     }

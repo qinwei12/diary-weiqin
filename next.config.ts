@@ -1,22 +1,23 @@
 import type { NextConfig } from "next";
 
+const remotePatterns = [] as NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>;
+
+if (process.env.B2_ENDPOINT && process.env.B2_BUCKET) {
+  const endpoint = new URL(process.env.B2_ENDPOINT);
+  remotePatterns.push({
+    protocol: "https",
+    hostname: endpoint.hostname,
+    port: endpoint.port,
+    pathname: `/${process.env.B2_BUCKET}/**`,
+  });
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   images: {
-    remotePatterns: process.env.UPYUN_PUBLIC_BASE_URL
-      ? (() => {
-          const imageOrigin = new URL(process.env.UPYUN_PUBLIC_BASE_URL);
-          return [{
-            protocol: "https" as const,
-            hostname: imageOrigin.hostname,
-            port: imageOrigin.port,
-            pathname: `${imageOrigin.pathname.replace(/\/$/, "")}/diary/**`,
-            search: "",
-          }];
-        })()
-      : [],
+    remotePatterns,
   },
   devIndicators: false,
   turbopack: {

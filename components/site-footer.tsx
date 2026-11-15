@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { RssIcon } from "./icons";
 import { SITE, SITE_PALETTES } from "@/lib/site";
@@ -21,6 +20,7 @@ export function SiteFooter() {
         <nav className="footer__links" aria-label="页脚导航">
           <Link href="/">动态</Link>
           <Link href="/archive">归档</Link>
+          <Link href="/album">相册</Link>
           <Link href="/about">关于</Link>
           <Link href="/account">账户</Link>
           <a href="/rss.xml">
@@ -38,24 +38,6 @@ export function SiteFooter() {
                 title={palette.name}
               />
             ))}
-          </div>
-          <div className="footer__friends">
-            <p>友情链接</p>
-            <a
-              href="https://console.upyun.com/register/?invite=-ky4yumD3"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer__friend-link"
-              aria-label="又拍云，打开注册链接"
-            >
-              <Image
-                src="/images/upyun-logo.png"
-                alt="又拍云"
-                width={111}
-                height={38}
-              />
-              <span>又拍云</span>
-            </a>
           </div>
         </div>
       </div>

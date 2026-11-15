@@ -11,6 +11,7 @@ import { useDiaryTheme } from "./theme-provider";
 const links = [
   { href: "/", label: "动态", exact: true },
   { href: "/archive", label: "归档" },
+  { href: "/album", label: "相册" },
   { href: "/about", label: "关于" },
 ];
 

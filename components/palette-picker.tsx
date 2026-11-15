@@ -4,9 +4,12 @@ import { toast } from "@/lib/toast";
 import type { SitePalette } from "@/lib/site";
 import { CheckIcon, PaletteIcon } from "./icons";
 import { useDiaryTheme } from "./theme-provider";
+import { useHydrated } from "./use-hydrated";
 
 export function PalettePicker({ palettes }: { palettes: SitePalette[] }) {
-  const { theme, follow, source, applyTheme, setFollow } = useDiaryTheme();
+  const { theme, follow: storedFollow, source, applyTheme, setFollow } = useDiaryTheme();
+  const hydrated = useHydrated();
+  const follow = hydrated ? storedFollow : false;
 
   function choose(palette: SitePalette) {
     applyTheme(palette.theme, `「${palette.name}」色板`);
@@ -36,7 +39,7 @@ export function PalettePicker({ palettes }: { palettes: SitePalette[] }) {
 
       <div className="palette-options">
         {palettes.map((palette) => {
-          const selected =
+          const selected = hydrated &&
             theme.accent.toLowerCase() === palette.theme.accent.toLowerCase();
           return (
             <button

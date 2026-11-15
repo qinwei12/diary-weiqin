@@ -8,6 +8,13 @@
       "when": 1794691057311,
       "tag": "0000_solid_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794708198360,
+      "tag": "0001_blushing_micromax",
+      "breakpoints": true
     }
   ]
 }

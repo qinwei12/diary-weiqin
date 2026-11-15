@@ -7,7 +7,7 @@ import {
   normalizePalette,
   sniffImageFormat,
 } from "@/lib/image-utils";
-import { deleteFromUpyun, uploadToUpyun } from "@/lib/upyun";
+import { deleteFromB2, uploadToB2 } from "@/lib/b2";
 
 type UploadedImage = {
   url: string;
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   try {
     for (const [index, file] of files.entries()) {
       if (file.size > MAX_UPLOAD_BYTES) {
-        throw new UploadError("单张图片不能超过 15MB", 413);
+        throw new UploadError("单张图片不能超过 20MB", 413);
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -92,11 +92,11 @@ export async function POST(request: Request) {
       }
       const theme = themeFromPalette(palette);
 
-      const url = await uploadToUpyun(buffer, format);
-      written.push(url);
+      const uploaded = await uploadToB2(buffer, format);
+      written.push(uploaded.key);
 
       images.push({
-        url,
+        url: uploaded.url,
         width: dimensions.width,
         height: dimensions.height,
         accent: theme.accent,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     await Promise.all(
-      written.map((url) => deleteFromUpyun(url).catch((error) => {
+      written.map((key) => deleteFromB2(key).catch((error) => {
         console.error("Upload rollback failed:", error instanceof Error ? error.message : "Unknown error");
       })),
     );

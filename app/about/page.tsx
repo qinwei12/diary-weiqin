@@ -13,7 +13,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "关于",
-  description: `关于 ${SITE.name}，和它的主人 ${SITE.author}。`,
+  description: `关于 ${SITE.name}，和这个安静角落。`,
   alternates: { canonical: "/about" },
 };
 
@@ -49,7 +49,7 @@ export default function AboutPage() {
           <h1>
             你好，
             <br />
-            我是 {SITE.author}。
+            这里是 {SITE.name}。
           </h1>
           <p className="about-hero__lead">
             一个喜欢晚风、旧书和雨天的人。白天在人群里，晚上回到自己的安静角落。

@@ -15,7 +15,7 @@ export type ComposerImage = PostImage & { localId: string };
 
 const MAX_EDGE = 2200;
 const SAMPLE_EDGE = 120;
-const MAX_FILE_BYTES = 15 * 1024 * 1024;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const ACCEPTED = new Set([
   "image/jpeg",
   "image/png",
@@ -91,12 +91,12 @@ function canvasToBlob(
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
 
-async function prepareImage(file: File): Promise<Prepared> {
+async function prepareImage(file: File, maxFileBytes = MAX_FILE_BYTES): Promise<Prepared> {
   if (!ACCEPTED.has(file.type)) {
     throw new Error("支持 JPG、PNG、WebP 和 AVIF 格式");
   }
-  if (file.size > MAX_FILE_BYTES) {
-    throw new Error("单张图片不能超过 15MB");
+  if (file.size > maxFileBytes) {
+    throw new Error("单张图片不能超过 20MB");
   }
 
   const decoded = await decodeImage(file);
@@ -130,8 +130,8 @@ async function prepareImage(file: File): Promise<Prepared> {
       ? new File([blob], `${baseName}.webp`, { type: "image/webp" })
       : file;
 
-    if (outputFile.size > MAX_FILE_BYTES) {
-      throw new Error("图片压缩后还是太大了，换一张小一点的吧");
+    if (outputFile.size > maxFileBytes) {
+      throw new Error("图片压缩后还是超过 20MB，换一张小一点的吧");
     }
 
     return {
@@ -146,6 +146,10 @@ async function prepareImage(file: File): Promise<Prepared> {
   }
 }
 
+export function prepareImageFile(file: File, maxFileBytes = MAX_FILE_BYTES): Promise<Prepared> {
+  return prepareImage(file, maxFileBytes);
+}
+
 export async function uploadImages(
   files: File[],
   onProgress?: (percent: number) => void,
@@ -155,65 +159,96 @@ export async function uploadImages(
     throw new DOMException("Upload aborted", "AbortError");
   }
 
-  const prepared: Prepared[] = [];
+  const uploaded: UploadedImage[] = [];
   for (const [index, file] of files.entries()) {
-    prepared.push(await prepareImage(file));
-    onProgress?.(Math.round(((index + 1) / files.length) * 8));
+    const prepared = await prepareImage(file);
+    onProgress?.(Math.round((index / files.length) * 8));
+    const presignResponse = await fetch("/api/upload/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentType: prepared.file.type, size: prepared.file.size }),
+      signal,
+    });
+    const presign = await presignResponse.json() as { key?: string; uploadUrl?: string; error?: string };
+    if (!presignResponse.ok || !presign.key || !presign.uploadUrl) throw new Error(presign.error ?? "无法准备图片上传");
+    const putResponse = await fetch(presign.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": prepared.file.type },
+      body: prepared.file,
+      signal,
+    });
+    if (!putResponse.ok) throw new Error("图片上传到 B2 失败，请检查桶的 CORS 设置");
+    uploaded.push({
+      url: `/api/media?key=${encodeURIComponent(presign.key)}`,
+      width: prepared.width,
+      height: prepared.height,
+      accent: prepared.accent,
+      palette: prepared.palette,
+    });
+    onProgress?.(Math.round(((index + 1) / files.length) * 100));
   }
+  return uploaded;
+}
 
-  const form = new FormData();
-  prepared.forEach((item) => form.append("files", item.file, item.file.name));
-  form.append(
-    "metadata",
-    JSON.stringify(
-      prepared.map((item) => ({
-        width: item.width,
-        height: item.height,
-        palette: item.palette,
-      })),
-    ),
-  );
+export type AlbumUploadedImage = {
+  id: string;
+  objectKey: string;
+  url: string;
+  width: number;
+  height: number;
+  bytes: number;
+  alt: string;
+  caption: string;
+  accent: string;
+  palette: string[];
+  createdAt: string;
+};
 
-  return new Promise<UploadedImage[]>((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open("POST", "/api/upload");
-    request.timeout = 120_000;
-
-    request.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        onProgress?.(8 + Math.round((event.loaded / event.total) * 84));
-      }
+export async function uploadAlbumImages(
+  files: File[],
+  onProgress?: (percent: number) => void,
+  signal?: AbortSignal,
+): Promise<AlbumUploadedImage[]> {
+  const maxBytes = 20 * 1024 * 1024;
+  const uploaded: AlbumUploadedImage[] = [];
+  for (const [index, source] of files.entries()) {
+    if (signal?.aborted) throw new DOMException("Upload aborted", "AbortError");
+    const prepared = await prepareImage(source, maxBytes);
+    const presignResponse = await fetch("/api/album/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentType: prepared.file.type, size: prepared.file.size }),
+      signal,
     });
-
-    request.addEventListener("load", () => {
-      try {
-        const payload = JSON.parse(request.responseText) as {
-          images?: UploadedImage[];
-          error?: string;
-        };
-        if (request.status >= 200 && request.status < 300 && payload.images) {
-          onProgress?.(100);
-          resolve(payload.images);
-          return;
-        }
-        reject(new Error(payload.error ?? "图片上传失败了"));
-      } catch {
-        reject(new Error("服务器返回了无法识别的内容"));
-      }
+    const presign = await presignResponse.json() as { key?: string; uploadUrl?: string; error?: string };
+    if (!presignResponse.ok || !presign.key || !presign.uploadUrl) throw new Error(presign.error ?? "无法准备相册上传");
+    const putResponse = await fetch(presign.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": prepared.file.type },
+      body: prepared.file,
+      signal,
     });
+    if (!putResponse.ok) throw new Error("图片上传到 B2 失败，请检查桶的 CORS 设置");
+    onProgress?.(Math.round(((index + 0.75) / files.length) * 100));
 
-    request.addEventListener("error", () =>
-      reject(new Error("网络连接中断了，再试一次吧")),
-    );
-    request.addEventListener("timeout", () =>
-      reject(new Error("图片上传超时了，换一张小一点的试试")),
-    );
-    request.addEventListener("abort", () =>
-      reject(new DOMException("Upload aborted", "AbortError")),
-    );
-    signal?.addEventListener("abort", () => request.abort());
-    request.send(form);
-  });
+    const completeResponse = await fetch("/api/album/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: presign.key,
+        width: prepared.width,
+        height: prepared.height,
+        bytes: prepared.file.size,
+        palette: prepared.palette,
+      }),
+      signal,
+    });
+    const complete = await completeResponse.json() as { image?: AlbumUploadedImage; error?: string };
+    if (!completeResponse.ok || !complete.image) throw new Error(complete.error ?? "无法保存相册照片");
+    uploaded.push(complete.image);
+    onProgress?.(Math.round(((index + 1) / files.length) * 100));
+  }
+  return uploaded;
 }
 
 export function toComposerImage(image: UploadedImage): ComposerImage {

@@ -1,30 +1,24 @@
 import path from "node:path";
 
 export const UPLOAD_DIRECTORY = path.join(process.cwd(), "public", "uploads");
-export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 export const MAX_IMAGE_PIXELS = 40_000_000;
 
 export type ImageFormat = "jpeg" | "png" | "webp" | "avif";
 
-export function isUpyunImageUrl(value: string): boolean {
+export function isManagedImageUrl(url: string): boolean {
+  return /^\/(?:uploads|images)\/[a-zA-Z0-9._-]+$/.test(url) || isB2ProxyImageUrl(url);
+}
+
+function isB2ProxyImageUrl(value: string): boolean {
   try {
-    const configured = process.env.UPYUN_PUBLIC_BASE_URL;
-    if (!configured) return false;
-    const base = new URL(configured);
-    const image = new URL(value);
-    const prefix = `${base.pathname.replace(/\/$/, "")}/diary/`;
-    return image.protocol === "https:" && base.protocol === "https:" &&
-      image.origin === base.origin && image.pathname.startsWith(prefix) &&
-      /^\d{4}\/\d{2}\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|avif)$/.test(image.pathname.slice(prefix.length)) &&
-      !image.username && !image.password && !image.search && !image.hash &&
-      !value.includes("%") && !value.includes("\\") && !value.split("/").some(segment => segment === "." || segment === "..");
+    const url = new URL(value, "https://local.invalid");
+    const key = url.searchParams.get("key");
+    return url.pathname === "/api/media" && Boolean(key) && url.searchParams.toString() === `key=${encodeURIComponent(key!)}` &&
+      /^diary\/\d{4}\/\d{2}\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|avif)$/.test(key!);
   } catch {
     return false;
   }
-}
-
-export function isManagedImageUrl(url: string): boolean {
-  return /^\/(?:uploads|images)\/[a-zA-Z0-9._-]+$/.test(url) || isUpyunImageUrl(url);
 }
 
 export function absoluteImagePath(url: string): string | null {

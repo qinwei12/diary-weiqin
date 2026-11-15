@@ -2,20 +2,21 @@ import "dotenv/config";
 import { stat } from "node:fs/promises";
 import { sql } from "drizzle-orm";
 import { db, pool } from "../lib/db";
-import { posts, postImages, users, sessions } from "../lib/schema";
+import { albumImages, posts, postImages, users, sessions } from "../lib/schema";
 import { absoluteImagePath, isHexColor, normalizeDimensions } from "../lib/image-utils";
 
 try {
   const report = await db.transaction(async (tx) => {
     const entries = await tx.select().from(posts);
     const images = await tx.select().from(postImages);
+    const album = await tx.select().from(albumImages);
     const owners = await tx.select().from(users);
     const logins = await tx.select().from(sessions);
     const indexes = await tx.execute<{ indexname: string }>(sql`
       SELECT indexname FROM pg_indexes WHERE schemaname = 'public'
-      AND tablename IN ('Post', 'PostImage', 'User', 'Session')
+      AND tablename IN ('Post', 'PostImage', 'AlbumImage', 'User', 'Session')
     `);
-    const expectedIndexes = ["Post_pkey", "PostImage_pkey", "User_pkey", "Session_pkey", "Post_createdAt_idx", "PostImage_postId_position_idx", "User_username_key", "Session_tokenHash_key", "Session_userId_idx", "Session_expiresAt_idx"];
+    const expectedIndexes = ["Post_pkey", "PostImage_pkey", "AlbumImage_pkey", "AlbumImage_objectKey_key", "AlbumImage_createdAt_idx", "User_pkey", "Session_pkey", "Post_createdAt_idx", "PostImage_postId_position_idx", "User_username_key", "Session_tokenHash_key", "Session_userId_idx", "Session_expiresAt_idx"];
     const missingIndexes = expectedIndexes.filter(name => !indexes.rows.some(row => row.indexname === name));
     const missingFiles: string[] = [];
     let externalImages = 0;
@@ -38,6 +39,9 @@ try {
       invalidColors: images.filter(image => !isHexColor(image.accent) || !image.palette.length || image.palette.some(color => !isHexColor(color))).length,
       invalidImageOrdering: entries.filter(post => images.filter(image => image.postId === post.id).sort((a, b) => a.position - b.position).some((image, index) => image.position !== index)).length,
       postsOverNineImages: entries.filter(post => images.filter(image => image.postId === post.id).length > 9).length,
+      invalidAlbumDimensions: album.filter(image => !normalizeDimensions(image.width, image.height)).length,
+      albumOverTwentyMegabytes: album.filter(image => image.bytes > 20 * 1024 * 1024).length,
+      duplicateAlbumKeys: album.length - new Set(album.map(image => image.objectKey)).size,
       invalidPasswordHashFormat: owners.filter(owner => !/^scrypt\$[a-f0-9]{32}\$[a-f0-9]{128}$/.test(owner.passwordHash)).length,
       invalidSessionHashFormat: logins.filter(session => !/^[a-f0-9]{64}$/.test(session.tokenHash)).length,
       missingIndexes,
@@ -45,7 +49,7 @@ try {
     };
     return {
       host: new URL(process.env.DATABASE_URL!).hostname,
-      counts: { posts: entries.length, images: images.length, users: owners.length, sessions: logins.length },
+      counts: { posts: entries.length, images: images.length, albumImages: album.length, users: owners.length, sessions: logins.length },
       issues,
       maintenance: {
         expiredSessions: logins.filter(session => session.expiresAt.getTime() <= Date.now()).length,

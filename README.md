@@ -9,7 +9,8 @@
 - **日常动态**：按天分组的动态流，含时间、心情、天气、地点、标签、置顶与点赞。
 - **搜索与分页**：搜索、标签筛选在服务端按 URL 参数完成；首页默认只下发 10 篇摘要，每次可多翻 10 篇，最多 100 篇，更早的内容去归档页。
 - **发布与编辑**：标题、Markdown 正文、实时预览、并排预览、表情/天气/地点/标签、自定义发布时间。
-- **图片**：拖拽、点击或直接粘贴图片；浏览器端压缩并生成 WebP，上传到又拍云；每篇最多 9 张，第一张为封面，可随时更换，也可逐张填写图片说明（alt）。
+- **图片**：拖拽、点击或直接粘贴图片；浏览器端压缩并生成 WebP，上传到 Backblaze B2；每篇最多 9 张，单张不超过 20MB，第一张为封面，可随时更换，也可逐张填写图片说明（alt）。
+- **私密相册墙**：登录后才能进入的生活照片墙，B2 桶保持私有，页面使用临时签名地址；支持批量直传、懒加载、主题适配、键盘切换、预览和删除。
 - **自动取色**：从封面照片提取色板，作为这一篇的主题色；详情页可以「用到全站」。
 - **跟随照片换肤**：打开开关后，滚动动态流时页面主色会跟着当前日记的配图变化；也可以在色板面板里手动选色。
 - **明暗两种氛围**：日间奶油纸张 / 夜间深棕，偏好保存在浏览器。
@@ -17,7 +18,7 @@
 - **交互细节**：灯箱与确认弹层有焦点陷阱；支持明暗主题、跟随配图换色、图片灯箱与移动端底部导航。
 - **草稿**：发布页会自动把未发布内容存在本机 localStorage，刷新或离开后可恢复。
 - **主人鉴权**：只有登录后的主人可以写、改、删、点赞与上传；访客只读。密码可在账户页修改。
-- **数据存储**：日记、配图元数据、点赞、账号与登录会话存进 Neon；新上传的图片放在又拍云；示例图随仓库保存在 `public/images`。
+- **数据存储**：日记、配图元数据、相册元数据、点赞、账号与登录会话存进 Neon；新上传的图片放在 Backblaze B2；示例图随仓库保存在 `public/images`。
 
 ## 技术栈
 
@@ -51,10 +52,13 @@ NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 NEXT_PUBLIC_ICP_NUMBER=
 OWNER_USERNAME=qinwei
 OWNER_INITIAL_PASSWORD=change-me
-UPYUN_BUCKET=image-quiet-wisp
-UPYUN_OPERATOR=qinwei
-UPYUN_PASSWORD=操作员密码或32位MD5
-UPYUN_PUBLIC_BASE_URL=https://image-quiet-wisp.b0.aicdn.com
+B2_BUCKET=quiet-wisp
+B2_REGION=us-east-005
+B2_ENDPOINT=https://s3.us-east-005.backblazeb2.com
+B2_KEY_ID=受限 Application Key ID
+B2_APPLICATION_KEY=受限 Application Key
+B2_PUBLIC_BASE_URL=
+B2_KEY_PREFIX=diary
 ```
 
 `.env` 已在 `.gitignore` 中，不要把真实连接串提交到仓库。`NEXT_PUBLIC_SITE_URL` 会影响 RSS、sitemap 与 Open Graph 中的绝对链接。
@@ -143,20 +147,23 @@ Drizzle Kit 配置在 [`drizzle.config.ts`](drizzle.config.ts)，SQL 迁移和�
 ## 图片存放在哪里
 
 - 示例图片：`public/images/`，随仓库提交。
-- 用户上传：又拍云；数据库中只保存 URL、尺寸和色板。
-- 上传时会先在浏览器里缩放/转 WebP，并提取主色，再由服务端签名上传到又拍云；账号凭据只保存在服务端 `.env`，不会发送给浏览器。
+- 日记新图：Backblaze B2 的 `diary/` 前缀；数据库中保存应用内代理 URL、尺寸和色板，服务端按需签发 B2 临时地址。
+- 私密相册：Backblaze B2 的 `album/` 前缀，数据库保存对象键、尺寸、文件大小、说明和色板；只有登录后的主人能读取相册列表和临时图片地址。
+- 上传时会先在浏览器里缩放/转 WebP，并提取主色；相册照片通过预签名 PUT 直传 B2，避免把 20MB 文件经过 Vercel Function。
+- B2 桶保持私有。不要使用 Master Application Key；请创建只允许目标桶、`diary/` 和 `album/` 对象读写删除的受限 Application Key。浏览器只会拿到短期上传或下载签名，不会拿到 B2 密钥。
 
-> 示例图保存在 `public/images/`，随应用部署；用户上传的图片文件保存在又拍云，对应 URL 和图片元数据写进 `PostImage`。删除文章时会清理不再被其他文章引用的又拍云图片；如果编辑器移除了已上传但尚未发布的图片，会遗留孤儿文件，可在又拍云后台定期清理。
+> 示例图保存在 `public/images/`，随应用部署；用户上传的日记图片和相册照片保存在 B2。删除文章或相册照片时会清理不再引用的 B2 对象。
 
 ## 部署注意
 
 1. 使用 Node.js 运行时执行 `bun run build` / `bun run start`。
 2. 在部署环境设置 `DATABASE_URL`、`NEXT_PUBLIC_SITE_URL`，并在取得工信部备案号后设置 `NEXT_PUBLIC_ICP_NUMBER`。
 3. 部署前执行 `bun run db:migrate`，应用已审阅的 SQL 迁移。Neon 使用控制台提供的 pooled connection string。
-4. 在部署环境设置 `UPYUN_BUCKET`、`UPYUN_OPERATOR`、`UPYUN_PASSWORD` 和 HTTPS 图片访问域名 `UPYUN_PUBLIC_BASE_URL`。
-5. 上线前修改初始密码，并把 `NEXT_PUBLIC_SITE_URL` 设为真实的 `https://` 地址；登录 Cookie 会据此启用 Secure。
-6. 登录限流是单进程内存实现；多实例或公开站点建议在反向代理 / 网关再加一层限流。
-7. 关于页的版式元素与灵感参考了哔哩哔哩创作者 **@ZipZipPipe**，链接在页面底部。
+4. 在部署环境设置 `B2_BUCKET`、`B2_REGION`、`B2_ENDPOINT`、受限 `B2_KEY_ID` 和 `B2_APPLICATION_KEY`。私有相册不需要 `B2_PUBLIC_BASE_URL`。
+5. 在 B2 桶的 CORS 设置中允许站点的 HTTPS 来源执行 `PUT`，并允许 `Content-Type` 请求头；相册使用预签名 URL 直传，禁止使用 `*` 作为生产来源。
+6. 上线前修改初始密码，并把 `NEXT_PUBLIC_SITE_URL` 设为真实的 `https://` 地址；登录 Cookie 会据此启用 Secure。
+7. 登录限流是单进程内存实现；多实例或公开站点建议在反向代理 / 网关再加一层限流。
+8. 关于页的版式元素与灵感参考了哔哩哔哩创作者 **@ZipZipPipe**，链接在页面底部。
 
 ## 常用命令
 
@@ -186,22 +193,25 @@ app/                路由、页面、Server Actions 页面入口
   login/            登录
   account/          账户、改密与退出
   archive/          归档
-  api/upload/       图片上传接口
+  api/upload/       日记图片上传接口
+  api/album/        私密相册预签名上传与保存接口
+  api/media/        日记图片临时访问代理
+album/              登录后可见的私密相册墙
 components/         首页动态流、主题控制、编辑器、灯箱等
 lib/                Drizzle 模型与数据读取、鉴权/密码、校验、取色、Markdown、聚合计算
 drizzle/            SQL 迁移、journal 与模型快照
 drizzle.config.ts   Drizzle Kit 配置
 public/images/      示例图与 OG 分享图
-public/uploads/     历史本地上传（gitignore，新图片存又拍云）
+public/uploads/     历史本地上传（gitignore，新图片存 B2）
 scripts/            seed、数据迁移、完整性检查、重置密码和清理维护脚本
 tests/              Bun 单元测试
 ```
 
 ## 数据迁移与验证
 
-本次从 Prisma Postgres 迁移到 Neon 保留了所有记录 ID、字段、密码哈希、会话哈希与时间戳。源数据库未被修改；又拍云接入前的数据库图片 URL 仍然指向本地 `public/images/` 或 `public/uploads/`。
+本次从 Prisma Postgres 迁移到 Neon 保留了所有记录 ID、字段、密码哈希、会话哈希与时间戳。图片 URL 使用本地静态资源或 B2 代理地址；新增的 `AlbumImage` 表只保存相册元数据和 B2 对象键，不把图片文件写进 Neon。
 
-可运行 `bun run db:check` 进行只读完整性检查；`bun run test:db` 使用独立测试账号和日记，验证服务端增删改、并发点赞、外键、事务回滚、登录、改密及又拍云上传与删除，结束后清理测试数据。集成测试需要 Neon 和又拍云配置；单元测试 `bun test` 不访问数据库或云存储。
+可运行 `bun run db:check` 进行只读完整性检查；`bun run test:db` 使用独立测试账号和日记，验证服务端增删改、并发点赞、外键、事务回滚、登录、改密及 B2 上传与删除，结束后清理测试数据。集成测试需要 Neon 和 B2 受限 key；单元测试 `bun test` 不访问数据库或云存储。
 
 如需再次迁移，在被 Git 忽略的 `.env.migration` 中配置 `SOURCE_DATABASE_URL` 和 `TARGET_DATABASE_URL`，然后运行 `bun run db:migrate-data`。脚本会先将源数据保存在 `data/database-backups/`（Git 忽略，目录权限 700、文件权限 600），应用目标库迁移，再在一个事务中导入并逐字段验证。目标有不同数据时会拒绝覆盖；如果源库迁移期间发生变更，也会报错，不能继续切换连接。迁移时应暂停源站写入。数据量较大时请改用 PostgreSQL 原生备份与恢复工具。
 

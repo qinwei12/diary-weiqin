@@ -842,7 +842,7 @@ export function Composer({
                   拖进照片，或{" "}
                   <span className="media-dropzone__link">选择图片</span>
                 </p>
-                <small>JPG、PNG、WebP、AVIF · 单张不超过 15MB</small>
+                <small>JPG、PNG、WebP、AVIF · 单张不超过 20MB</small>
               </div>
             </div>
 

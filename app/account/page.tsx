@@ -8,6 +8,7 @@ import { PasswordForm } from "@/components/account-forms";
 import {
   ArrowUpRightIcon,
   CheckIcon,
+  ImageIcon,
   PenIcon,
   SparkIcon,
 } from "@/components/icons";
@@ -115,6 +116,10 @@ function AccountView({
             </dl>
 
             <div className="account-links">
+              <Link href="/album">
+                <ImageIcon size={15} />
+                打开私密相册
+              </Link>
               <Link href="/compose">
                 <PenIcon size={15} />
                 写一篇日记

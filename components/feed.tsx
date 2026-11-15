@@ -26,6 +26,7 @@ import {
 } from "./icons";
 import { PostCard } from "./post-card";
 import { useDiaryTheme } from "./theme-provider";
+import { useHydrated } from "./use-hydrated";
 
 export function Feed({
   posts,
@@ -44,7 +45,8 @@ export function Feed({
   activeTag: string | null;
   limit: number;
 }) {
-  const { follow, source, applyTheme, setFollow } = useDiaryTheme();
+  const { follow: storedFollow, source, applyTheme, setFollow } = useDiaryTheme();
+  const follow = useHydrated() ? storedFollow : false;
   const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
