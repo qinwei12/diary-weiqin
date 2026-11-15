@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deletePost } from "@/lib/actions";
 import type { Theme } from "@/lib/colors";
@@ -62,7 +61,6 @@ export function DeletePostButton({
   postId: string;
   title: string;
 }) {
-  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -75,8 +73,8 @@ export function DeletePostButton({
         return;
       }
       toast("这一页已经收走了", "success");
-      router.push("/");
-      router.refresh();
+      // Reload the feed after deletion so the server reads the invalidated post list.
+      window.location.replace("/");
     });
   }
 
