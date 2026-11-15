@@ -87,6 +87,7 @@ export function AlbumWall({ initialImages }: { initialImages: AlbumWallImage[] }
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1000px) 33vw, 25vw"
                 loading="lazy"
+                unoptimized
                 className="album-tile__image"
               />
               {image.caption ? <span className="album-tile__caption">{image.caption}</span> : null}
@@ -163,7 +164,7 @@ function AlbumLightbox({
     <div ref={dialogRef} className="album-lightbox" role="dialog" aria-modal="true" aria-label="相册照片预览" onClick={onClose}>
       <button type="button" className="album-lightbox__close" onClick={onClose} aria-label="关闭预览"><CloseIcon size={20} /></button>
       <div className="album-lightbox__stage" onClick={(event) => event.stopPropagation()}>
-        <Image key={image.url} src={image.url} alt={image.alt || image.caption || "生活照片"} width={image.width} height={image.height} sizes="92vw" className="album-lightbox__image" />
+        <Image key={image.url} src={image.url} alt={image.alt || image.caption || "生活照片"} width={image.width} height={image.height} sizes="92vw" unoptimized className="album-lightbox__image" />
       </div>
       <div className="album-lightbox__meta" onClick={(event) => event.stopPropagation()}>
         <div>
