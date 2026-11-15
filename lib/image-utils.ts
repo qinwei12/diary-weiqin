@@ -22,8 +22,8 @@ function isStorageProxyImageUrl(value: string): boolean {
 }
 
 export function absoluteImagePath(url: string): string | null {
-  if (!isManagedImageUrl(url)) return null;
-  if (!url.startsWith("/")) return null;
+  // Storage proxy URLs are managed images too, but they are not local files.
+  if (!/^\/(?:uploads|images)\/[a-zA-Z0-9._-]+$/.test(url)) return null;
   const relative = url.replace(/^\//, "");
   const resolved = path.resolve(process.cwd(), "public", relative);
   const publicRoot = path.resolve(process.cwd(), "public");

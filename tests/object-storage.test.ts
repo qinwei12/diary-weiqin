@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { storageKeyFromProxyUrl, isStorageObjectKey, isStorageProxyImageUrl } from "../lib/object-storage";
-import { isManagedImageUrl } from "../lib/image-utils";
+import { absoluteImagePath, isManagedImageUrl } from "../lib/image-utils";
 
 test("accepts only safe diary and album object keys", () => {
   expect(isStorageObjectKey("diary/2026/11/photo.webp")).toBe(true);
@@ -14,6 +14,7 @@ test("recognizes the internal diary image proxy without accepting query injectio
   expect(isStorageProxyImageUrl(url)).toBe(true);
   expect(storageKeyFromProxyUrl(url)).toBe("diary/2026/11/photo.webp");
   expect(isManagedImageUrl(url)).toBe(true);
+  expect(absoluteImagePath(url)).toBeNull();
   expect(isStorageProxyImageUrl(`${url}&redirect=https://evil.example`)).toBe(false);
   expect(isStorageProxyImageUrl("/api/media?key=album%2F2026%2F11%2Fprivate.webp")).toBe(false);
 });
