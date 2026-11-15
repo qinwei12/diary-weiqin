@@ -9,6 +9,8 @@ import {
 } from "@/lib/image-utils";
 import { deleteFromB2, uploadToB2 } from "@/lib/b2";
 
+export const maxDuration = 60;
+
 type UploadedImage = {
   url: string;
   width: number;

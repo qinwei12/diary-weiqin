@@ -162,29 +162,22 @@ export async function uploadImages(
   const uploaded: UploadedImage[] = [];
   for (const [index, file] of files.entries()) {
     const prepared = await prepareImage(file);
-    onProgress?.(Math.round((index / files.length) * 8));
-    const presignResponse = await fetch("/api/upload/presign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentType: prepared.file.type, size: prepared.file.size }),
-      signal,
-    });
-    const presign = await presignResponse.json() as { key?: string; uploadUrl?: string; error?: string };
-    if (!presignResponse.ok || !presign.key || !presign.uploadUrl) throw new Error(presign.error ?? "无法准备图片上传");
-    const putResponse = await fetch(presign.uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": prepared.file.type },
-      body: prepared.file,
-      signal,
-    });
-    if (!putResponse.ok) throw new Error("图片上传到 B2 失败，请检查桶的 CORS 设置");
-    uploaded.push({
-      url: `/api/media?key=${encodeURIComponent(presign.key)}`,
+    onProgress?.(Math.round((index / files.length) * 100));
+    const formData = new FormData();
+    formData.append("files", prepared.file, prepared.file.name);
+    formData.append("metadata", JSON.stringify([{
       width: prepared.width,
       height: prepared.height,
-      accent: prepared.accent,
       palette: prepared.palette,
+    }]));
+    const uploadResponse = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      signal,
     });
+    const result = await uploadResponse.json() as { images?: UploadedImage[]; error?: string };
+    if (!uploadResponse.ok || !result.images?.[0]) throw new Error(result.error ?? "图片上传失败，请重试");
+    uploaded.push(result.images[0]);
     onProgress?.(Math.round(((index + 1) / files.length) * 100));
   }
   return uploaded;
@@ -214,38 +207,22 @@ export async function uploadAlbumImages(
   for (const [index, source] of files.entries()) {
     if (signal?.aborted) throw new DOMException("Upload aborted", "AbortError");
     const prepared = await prepareImage(source, maxBytes);
-    const presignResponse = await fetch("/api/album/presign", {
+    onProgress?.(Math.round((index / files.length) * 100));
+    const formData = new FormData();
+    formData.append("file", prepared.file, prepared.file.name);
+    formData.append("metadata", JSON.stringify({
+      width: prepared.width,
+      height: prepared.height,
+      palette: prepared.palette,
+    }));
+    const uploadResponse = await fetch("/api/album/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentType: prepared.file.type, size: prepared.file.size }),
+      body: formData,
       signal,
     });
-    const presign = await presignResponse.json() as { key?: string; uploadUrl?: string; error?: string };
-    if (!presignResponse.ok || !presign.key || !presign.uploadUrl) throw new Error(presign.error ?? "无法准备相册上传");
-    const putResponse = await fetch(presign.uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": prepared.file.type },
-      body: prepared.file,
-      signal,
-    });
-    if (!putResponse.ok) throw new Error("图片上传到 B2 失败，请检查桶的 CORS 设置");
-    onProgress?.(Math.round(((index + 0.75) / files.length) * 100));
-
-    const completeResponse = await fetch("/api/album/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        key: presign.key,
-        width: prepared.width,
-        height: prepared.height,
-        bytes: prepared.file.size,
-        palette: prepared.palette,
-      }),
-      signal,
-    });
-    const complete = await completeResponse.json() as { image?: AlbumUploadedImage; error?: string };
-    if (!completeResponse.ok || !complete.image) throw new Error(complete.error ?? "无法保存相册照片");
-    uploaded.push(complete.image);
+    const result = await uploadResponse.json() as { image?: AlbumUploadedImage; error?: string };
+    if (!uploadResponse.ok || !result.image) throw new Error(result.error ?? "相册照片上传失败，请重试");
+    uploaded.push(result.image);
     onProgress?.(Math.round(((index + 1) / files.length) * 100));
   }
   return uploaded;

@@ -46,6 +46,9 @@ function getClient() {
     endpoint: config.endpoint,
     region: config.region,
     forcePathStyle: true,
+    // B2 does not need SDK-generated checksum query parameters for these presigned uploads.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId: config.keyId,
       secretAccessKey: config.applicationKey,
