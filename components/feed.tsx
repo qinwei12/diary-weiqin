@@ -36,6 +36,7 @@ export function Feed({
   query,
   activeTag,
   limit,
+  canWrite,
 }: {
   posts: PostSummary[];
   tags: { tag: string; count: number }[];
@@ -44,6 +45,7 @@ export function Feed({
   query: string;
   activeTag: string | null;
   limit: number;
+  canWrite: boolean;
 }) {
   const { follow: storedFollow, source, applyTheme, setFollow } = useDiaryTheme();
   const follow = useHydrated() ? storedFollow : false;
@@ -247,11 +249,11 @@ export function Feed({
               >
                 清除筛选
               </Link>
-            ) : (
+            ) : canWrite ? (
               <Link href="/compose" className="button button--primary button--small">
                 写下第一篇
               </Link>
-            )}
+            ) : null}
           </div>
         ) : (
           groups.map((group) => (

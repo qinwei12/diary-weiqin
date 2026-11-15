@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Feed } from "@/components/feed";
 import { FeedSidebar } from "@/components/feed-sidebar";
 import { Hero } from "@/components/hero";
+import { AuthOnly } from "@/components/auth-only";
 import { ArrowRightIcon, LeafIcon, PenIcon } from "@/components/icons";
 import {
   filterPosts,
@@ -11,6 +12,7 @@ import {
   tagCounts,
 } from "@/lib/aggregate";
 import { normalizeFeedLimit } from "@/lib/feed";
+import { getSession } from "@/lib/auth";
 import { getAllPosts } from "@/lib/posts";
 
 type HomeSearchParams = PageProps<"/">["searchParams"];
@@ -67,11 +69,15 @@ export default async function HomePage({
           <h2>今天，也值得被记下来。</h2>
           <p>不必写得很好。一句话、一张照片，或者只是一个当下的心情，都算数。</p>
         </div>
-        <Link href="/compose" className="button button--primary">
-          <PenIcon size={16} />
-          写下此刻
-          <ArrowRightIcon size={16} />
-        </Link>
+        <Suspense fallback={null}>
+          <AuthOnly>
+            <Link href="/compose" className="button button--primary">
+              <PenIcon size={16} />
+              写下此刻
+              <ArrowRightIcon size={16} />
+            </Link>
+          </AuthOnly>
+        </Suspense>
       </section>
     </div>
   );
@@ -95,6 +101,7 @@ async function HomeFeed({
   const query = firstParam(params.q).trim().slice(0, 80);
   const tag = firstParam(params.tag).trim().slice(0, 16);
   const limit = normalizeFeedLimit(firstParam(params.limit));
+  const canWrite = Boolean(await getSession());
 
   const posts = await getAllPosts();
   const matched = filterPosts(posts, query, tag);
@@ -109,6 +116,7 @@ async function HomeFeed({
       query={query}
       activeTag={tag || null}
       limit={limit}
+      canWrite={canWrite}
     />
   );
 }

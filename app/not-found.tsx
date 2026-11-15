@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AuthOnly } from "@/components/auth-only";
 import { ArrowLeftIcon, PenIcon } from "@/components/icons";
 
 export default function NotFound() {
@@ -20,10 +22,14 @@ export default function NotFound() {
           <ArrowLeftIcon size={16} />
           回到动态
         </Link>
-        <Link href="/compose" className="button button--ghost">
-          <PenIcon size={16} />
-          写一页新的
-        </Link>
+        <Suspense fallback={null}>
+          <AuthOnly>
+            <Link href="/compose" className="button button--ghost">
+              <PenIcon size={16} />
+              写一页新的
+            </Link>
+          </AuthOnly>
+        </Suspense>
       </div>
     </div>
   );

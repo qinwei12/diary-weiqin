@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import type { CSSProperties } from "react";
+import { AuthOnly } from "@/components/auth-only";
 import { ArchiveCalendar } from "@/components/archive-calendar";
 import { ArrowUpRightIcon, LeafIcon } from "@/components/icons";
 import { groupByMonth, statsFor } from "@/lib/aggregate";
@@ -76,9 +78,13 @@ export default async function ArchivePage() {
             </div>
             <h3>还没有可以归档的日子</h3>
             <p>去写下第一篇，明年再回来看。</p>
-            <Link href="/compose" className="button button--primary button--small">
-              写一篇
-            </Link>
+            <Suspense fallback={null}>
+              <AuthOnly>
+                <Link href="/compose" className="button button--primary button--small">
+                  写一篇
+                </Link>
+              </AuthOnly>
+            </Suspense>
           </div>
         ) : (
           months.map((month) => (

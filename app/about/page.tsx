@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import { AuthOnly } from "@/components/auth-only";
 import {
   PenIcon,
   RssIcon,
@@ -47,10 +49,14 @@ export default function AboutPage() {
           </p>
           <p className="about-hero__sign">— 写于 2026 年的秋天</p>
           <div className="about-hero__actions">
-            <Link href="/compose" className="button button--primary">
-              <PenIcon size={16} />
-              写一篇日记
-            </Link>
+            <Suspense fallback={null}>
+              <AuthOnly>
+                <Link href="/compose" className="button button--primary">
+                  <PenIcon size={16} />
+                  写一篇日记
+                </Link>
+              </AuthOnly>
+            </Suspense>
             <a href="/rss.xml" className="button button--ghost">
               <RssIcon size={16} />
               订阅 RSS

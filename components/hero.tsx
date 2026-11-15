@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import type { DiaryStats } from "@/lib/aggregate";
+import { AuthOnly } from "./auth-only";
 import { SITE, SITE_PALETTES } from "@/lib/site";
 import { ArrowRightIcon, PenIcon, SparkIcon } from "./icons";
 
@@ -83,10 +85,14 @@ export function Hero({ stats }: { stats: DiaryStats }) {
               读今天的日记
               <ArrowRightIcon size={16} />
             </a>
-            <Link href="/compose" className="button button--ghost">
-              <PenIcon size={16} />
-              写点什么
-            </Link>
+            <Suspense fallback={null}>
+              <AuthOnly>
+                <Link href="/compose" className="button button--ghost">
+                  <PenIcon size={16} />
+                  写点什么
+                </Link>
+              </AuthOnly>
+            </Suspense>
           </div>
 
           <p className="hero__note">

@@ -1,8 +1,15 @@
 import Link from "next/link";
+import type { OwnerSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { RssIcon } from "./icons";
 import { SITE, SITE_PALETTES } from "@/lib/site";
 
-export function SiteFooter() {
+export async function SiteFooter({
+  session,
+}: {
+  session?: Promise<OwnerSession | null>;
+}) {
+  const isAuthenticated = Boolean(await (session ?? getSession()));
   const icpNumber = process.env.NEXT_PUBLIC_ICP_NUMBER?.trim();
 
   return (
@@ -20,7 +27,7 @@ export function SiteFooter() {
         <nav className="footer__links" aria-label="页脚导航">
           <Link href="/">动态</Link>
           <Link href="/archive">归档</Link>
-          <Link href="/album">相册</Link>
+          {isAuthenticated ? <Link href="/album">相册</Link> : null}
           <Link href="/about">关于</Link>
           <Link href="/account">账户</Link>
           <a href="/rss.xml">

@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { CopyCodeHandler } from "@/components/copy-code-handler";
 import { MobileNav } from "@/components/mobile-nav";
+import { MobileNavClient } from "@/components/mobile-nav-client";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SiteHeaderClient } from "@/components/site-header-client";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/toaster";
 import { SITE } from "@/lib/site";
@@ -78,13 +81,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <ThemeProvider>
           <div className="site-shell">
-            <SiteHeader />
+            <Suspense fallback={<SiteHeaderClient isAuthenticated={false} />}>
+              <SiteHeader />
+            </Suspense>
             <main id="main" className="site-main">
               {children}
             </main>
-            <SiteFooter />
+            <Suspense fallback={<SiteFooter session={Promise.resolve(null)} />}>
+              <SiteFooter />
+            </Suspense>
           </div>
-          <MobileNav />
+          <Suspense fallback={<MobileNavClient isAuthenticated={false} />}>
+            <MobileNav />
+          </Suspense>
           <CopyCodeHandler />
           <Toaster />
         </ThemeProvider>
