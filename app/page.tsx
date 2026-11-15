@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Feed } from "@/components/feed";
 import { FeedSidebar } from "@/components/feed-sidebar";
 import { Hero } from "@/components/hero";
@@ -101,6 +102,7 @@ async function HomeFeed({
   const query = firstParam(params.q).trim().slice(0, 80);
   const tag = firstParam(params.tag).trim().slice(0, 16);
   const limit = normalizeFeedLimit(firstParam(params.limit));
+  await connection();
   const canWrite = Boolean(await getSession());
 
   const posts = await getAllPosts();

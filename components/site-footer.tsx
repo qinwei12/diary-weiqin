@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { OwnerSession } from "@/lib/auth";
+import { connection } from "next/server";
 import { getSession } from "@/lib/auth";
 import { RssIcon } from "./icons";
 import { SITE, SITE_PALETTES } from "@/lib/site";
@@ -9,7 +10,10 @@ export async function SiteFooter({
 }: {
   session?: Promise<OwnerSession | null>;
 }) {
-  const isAuthenticated = Boolean(await (session ?? getSession()));
+  const currentSession = session
+    ? await session
+    : (await connection(), await getSession());
+  const isAuthenticated = Boolean(currentSession);
   const icpNumber = process.env.NEXT_PUBLIC_ICP_NUMBER?.trim();
 
   return (
