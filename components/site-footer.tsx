@@ -55,11 +55,7 @@ export function SiteFooter() {
             <span>ICP备案号：</span>
             {icpNumber}
           </a>
-        ) : (
-          <span className="footer__icp footer__icp--placeholder">
-            ICP备案号：工信部备案号待填写
-          </span>
-        )}
+        ) : null}
         <span className="footer__made">用文字、照片，和一点点晚风。</span>
       </div>
     </footer>
